@@ -1,7 +1,7 @@
 import * as anchor from "@coral-xyz/anchor";
 import { Program } from "@coral-xyz/anchor";
 import { Counter } from "../target/types/counter";
-import { Keypair } from "@solana/web3.js";
+import { PublicKey } from "@solana/web3.js";
 
 const { expect } = require("chai");
 
@@ -10,23 +10,25 @@ describe("counter", () => {
   // Configure the client to use the local cluster.
   anchor.setProvider(anchor.AnchorProvider.env());
 
-  const counterAccount = new Keypair();
+  // const counterAccount = new Keypair();
 
 
   const program = anchor.workspace.Counter as Program<Counter>;
+
+  const [counterPDA] = PublicKey.findProgramAddressSync([Buffer.from("counter")], program.programId);
 
   
 
   it("Is initialized!", async () => {
     // Add your test here.
     const tx = await program.methods.initialize().accounts({
-      counter: counterAccount.publicKey,
-    }).signers([counterAccount]).rpc();
+      counter: counterPDA,
+    }).rpc();
 
     // Get accountdata
 
     const accountData = await program.account.counter.fetch(
-      counterAccount.publicKey,
+      counterPDA,
     );
 
     // Counter should be 1 chain and mocha
@@ -36,11 +38,11 @@ describe("counter", () => {
   it("Should increment", async () => {
 
   const tx = await program.methods.increment().accounts({
-    counter: counterAccount.publicKey,
+    counter: counterPDA,
   }).rpc();
 
   const accountData = await program.account.counter.fetch(
-    counterAccount.publicKey,
+    counterPDA,
   );
 
   expect(accountData.count.toNumber()).to.equal(2);

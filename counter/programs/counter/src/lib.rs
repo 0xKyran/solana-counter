@@ -10,6 +10,9 @@ pub mod counter {
         let counter = &mut ctx.accounts.counter; // Get the counter account and make it mutable
         counter.count = 1; // Start the counter at 1
         msg!("Counter initialized! at: {}", counter.count); // Log the counter value
+        
+        counter.bump = ctx.bumps.counter; // Set the bump seed for the account
+        msg!("Bump seed: {}", counter.bump); // Log the bump seed
         Ok(())
     }
 
@@ -27,7 +30,7 @@ pub struct Initialize<'info> {
     #[account(mut)]
     pub user: Signer<'info>, // Account that will sign the transaction
     
-    #[account(init, payer = user, space = 8 + 8)] // Account that will be created
+    #[account(init, seeds = [b"counter"], bump, payer = user, space = 8 + 8 + 1)] // Account that will be created
     pub counter: Account<'info, Counter>, // Account datafield
     pub system_program: Program<'info, System>, // Account must System program
 }
@@ -35,7 +38,11 @@ pub struct Initialize<'info> {
 // Account for increment function
 #[derive(Accounts)]
 pub struct Increment<'info> {
-    #[account(mut)]
+    #[account(
+        mut,
+        seeds = [b"counter"],
+        bump = counter.bump,
+    )]
     pub counter: Account<'info, Counter>, // Account that will be modified
 }
 
@@ -44,5 +51,6 @@ pub struct Increment<'info> {
 #[account]
 pub struct Counter {
     pub count: u64, // Counter datafield
+    pub bump: u8, // Bump seed for the account
 }
 
